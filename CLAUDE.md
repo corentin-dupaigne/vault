@@ -23,6 +23,7 @@ The knowledge graph is the product. Every page must link to every other page it 
 ```
 vault/
 ├── CLAUDE.md              ← this file
+├── state.md               ← operational counters (session and lint)
 ├── raw/                   ← universal drop zone, always being cleared
 ├── files/                 ← permanent storage of original documents and assets
 ├── llm-wiki/              ← you write freely here, dense, compounding
@@ -32,7 +33,7 @@ vault/
     └── proposals.md       ← your pending proposals for owner review
 ```
 
-These four folders are the only fixed structure. Everything else — all subfolders, all naming conventions, all organizational choices — you create dynamically based on what content actually arrives.
+The vault is an Obsidian vault. These four folders are the only fixed structure. `state.md` is the only file at vault root besides CLAUDE.md. Everything else — all subfolders, all naming conventions, all organizational choices — you create dynamically based on what content actually arrives.
 
 ---
 
@@ -72,7 +73,7 @@ The source of truth layer. This defines what is definitively known and validated
 
 You NEVER write directly to sot-wiki/ files except proposals.md. When you identify something that belongs here — a validated fact, a key life decision, a core value the owner has expressed, a relationship definitively described — you add it to proposals.md with full context and wait for owner approval.
 
-You read sot-wiki/ constantly and in full at the start of every session. If llm-wiki content contradicts sot-wiki content, sot-wiki always wins.
+If llm-wiki content contradicts sot-wiki content, sot-wiki always wins.
 
 The owner creates the subfolder structure inside sot-wiki/ as they approve proposals. You may suggest how to organize approved content but the owner decides.
 
@@ -96,6 +97,17 @@ Stubs are first-class citizens. A stub with one line and three inbound links is 
 
 ## Operations
 
+### Session Start
+
+**Mandatory — run before any other action every session:**
+
+1. Read `state.md`. Reset `session_counter` to 0. Write back. (`lint_counter` is not reset.)
+2. Read `llm-wiki/log.md` (last 20 entries) to understand recent context.
+3. Read `llm-wiki/index.md` to know what pages exist.
+4. Check `raw/` for unprocessed files. If any exist, run Ingest immediately.
+5. Append a `session-start` entry to `llm-wiki/log.md`.
+6. Briefly report to the owner: last session date, anything found in raw/, and any proposals in proposals.md older than 7 days.
+
 ### Ingest
 
 Triggered when the owner drops content in raw/, or asks you to process a specific source.
@@ -113,29 +125,43 @@ Triggered when the owner drops content in raw/, or asks you to process a specifi
 
 Triggered when the owner asks a question, requests a document, or wants to retrieve information.
 
-1. Read index.md only. Identify the 2-3 most relevant pages.
-2. Read those pages. If the answer is clear, stop here and respond.
-3. If the answer requires ground truth validation, read only the relevant sot-wiki pages.
+1. Read index.md. Identify the 2-3 most relevant pages by title and description.
+2. Read those pages. If the answer is clear, respond and stop.
+3. If the answer is partially clear, follow wikilinks from those pages one level deep. Stop after that.
+4. If the answer requires ground truth validation, read the relevant sot-wiki pages.
 
 For document retrieval: search files/ by description, date, or type. Return the file path and the key metadata you extracted on ingestion.
 
 ### Lint
 
-Triggered when the owner asks for a health check, or after every 20 ingest operations.
+Triggered when the owner asks for a health check, or when `lint_counter` reaches 20 (see Message counter).
 
 1. Read all of sot-wiki/.
 2. Scan llm-wiki/ for any content that contradicts sot-wiki. Flag and correct.
 3. Find orphan pages — pages with no inbound links. Add links or flag for review.
 4. Find entities mentioned across pages that lack their own page. Create stubs.
 5. Check index.md completeness — every llm-wiki page must be listed.
-6. If proposals.md has items older than 14 days, flag them to the owner.
-7. Write a short lint report: pages checked, issues found, issues fixed, items still needing owner attention.
+6. List all tags in use across llm-wiki. Identify semantic duplicates. Consolidate and update affected pages.
+7. If proposals.md has items older than 14 days, flag them to the owner.
+8. Write a short lint report: pages checked, issues found, issues fixed, items still needing owner attention.
+
+### Message counter
+
+After every message you send to the owner:
+
+1. Read `state.md`. Increment both `session_counter` and `lint_counter` by 1. Write back.
+2. If `session_counter` reaches 5: run Conversation log, then reset `session_counter` to 0 in `state.md`.
+3. If `lint_counter` reaches 20: run Lint, then reset `lint_counter` to 0 in `state.md`.
+
+Both triggers can fire in the same message if both counters hit their threshold simultaneously.
 
 ### Conversation log
 
-At the end of every conversation with the owner:
+At session end or when triggered by the message counter (every 5 messages), append to today's journal entry.
 
-1. Write or append a journal entry for today in llm-wiki/ under an appropriate path.
+**Journal path:** `llm-wiki/journal/YYYY/YYYY-MM-DD.md`
+
+1. Create the file at the path above if it doesn't exist; append to it if it does.
 2. Extract everything worth preserving into the relevant pages. This includes but is not limited 
 to: people, places, projects, concepts, decisions, goals, values, beliefs, emotions, questions, 
 contradictions, recurring themes, and any shift in the owner's thinking. When in doubt, extract. 
@@ -174,6 +200,8 @@ Explicit links to related pages with a note on why they are connected.
 - YYYY-MM-DD: updated, reason
 ```
 
+For claims not explicitly stated by the owner, append `[inferred]` inline. This flags content for priority review during lint.
+
 Use the listed values as a starting point but invent new types as content demands.
 
 ---
@@ -189,7 +217,7 @@ Proposed by Claude for owner review. Approve, edit, or reject each item.
 
 ## Pending
 
-### [YYYY-MM-DD] Short description of proposed fact
+### [YYYY-MM-DD] [HIGH|ROUTINE] Short description
 **Proposed file:** sot-wiki/filename.md
 **Proposed content:**
 > Exact text to add or create
@@ -200,6 +228,18 @@ Proposed by Claude for owner review. Approve, edit, or reject each item.
 
 ---
 ```
+
+---
+
+## state.md format
+
+```
+session_counter: N
+lint_counter: N
+```
+
+`session_counter` — incremented each message, reset to 0 at session start and after each conversation log trigger.
+`lint_counter` — incremented each message, never reset between sessions, reset to 0 after each lint trigger.
 
 ---
 
@@ -225,6 +265,7 @@ Categories in the index mirror the subfolder structure as it evolves. Update the
 ## log.md format
 
 ```
+## [YYYY-MM-DD HH:MM] session-start | Brief note on vault state at open
 ## [YYYY-MM-DD HH:MM] ingest | Source title or filename
 ## [YYYY-MM-DD HH:MM] query | Brief description of what was asked
 ## [YYYY-MM-DD HH:MM] lint | Pages checked: N | Issues found: N | Fixed: N

@@ -219,18 +219,26 @@
       "bases:Create new base": false
     }
   },
-  "active": "aaae9c3feb60532c",
+  "active": "d2401778564b2b28",
   "lastOpenFiles": [
+    "README.md",
+    "README.md.tmp.2217854.7674d5a24df2",
+    "CLAUDE.md.tmp.2217854.de62fd8c7da9",
+    "CLAUDE.md.tmp.2217854.39671475f989",
+    "sot-wiki/proposals.md.tmp.2217854.5bf9dc5f10d0",
+    "llm-wiki/index.md.tmp.2217854.7e287b46ef86",
+    "CLAUDE.md.tmp.2217854.38e4461a3a7f",
+    "CLAUDE.md.tmp.2217854.f1af7058adfa",
+    "state.md",
+    "state.md.tmp.2217854.bc4bb2727d48",
+    "CLAUDE.md.tmp.2217854.9eda90da2437",
+    "CLAUDE.md.tmp.2217854.6b4296cb9020",
     "wikilinks.md",
     "CLAUDE.md",
     "llm-wiki/index.md",
     "sot-wiki/proposals.md",
     "raw/keep.md",
     "llm-wiki/log.md",
-    "Welcome.md",
-    "files",
-    "sot-wiki",
-    "llm-wiki",
-    "raw"
+    "Welcome.md"
   ]
 }
